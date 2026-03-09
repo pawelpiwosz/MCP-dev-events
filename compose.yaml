@@ -1,0 +1,21 @@
+services:
+  mcp-server:
+    build: ./MCPserver
+    environment:
+      MCP_TRANSPORT: sse
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    environment:
+      MCP_SERVER_URL: http://mcp-server:8000/sse
+      LLM_BASE_URL: http://model-runner.docker.internal/engines/v1 # For Docker Desktop
+      # LLM_BASE_URL: http://model-runner.docker.internal:12434/engines/v1 # For Docker Engine
+      LLM_MODEL: ${LLM_MODEL:-ai/qwen3}
+    # For Docker Engine only — maps model-runner.docker.internal to the host gateway IP
+    # extra_hosts:
+    #   - "model-runner.docker.internal:host-gateway"
+    depends_on:
+      - mcp-server
+

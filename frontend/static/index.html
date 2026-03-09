@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dev.events — Tech Conferences</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+  header { background: #1e293b; padding: 1.5rem 2rem; border-bottom: 1px solid #334155; }
+  header h1 { font-size: 1.5rem; color: #38bdf8; }
+  header p { color: #94a3b8; font-size: 0.9rem; margin-top: 0.25rem; }
+  .controls { display: flex; gap: 1rem; padding: 1.5rem 2rem; background: #1e293b; flex-wrap: wrap; align-items: end; border-bottom: 1px solid #334155; }
+  .field { display: flex; flex-direction: column; gap: 0.3rem; }
+  .field label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+  select, input { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.9rem; }
+  input[type=text] { width: 120px; }
+  input[type=date] { width: 145px; }
+  input[type=number] { width: 70px; }
+  select:focus, input:focus, textarea:focus { outline: none; border-color: #38bdf8; }
+  button { background: #38bdf8; color: #0f172a; border: none; border-radius: 6px; padding: 0.55rem 1.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+  button:hover { background: #7dd3fc; }
+  button:disabled { opacity: 0.5; cursor: wait; }
+  .btn-reset { background: transparent; color: #94a3b8; border: 1px solid #334155; font-weight: 400; }
+  .btn-reset:hover { color: #e2e8f0; border-color: #64748b; }
+  .ask-bar { display: flex; gap: 0.75rem; padding: 1rem 2rem; background: #1e293b; border-bottom: 1px solid #334155; align-items: end; }
+  .ask-bar textarea { flex: 1; background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: inherit; resize: none; height: 40px; }
+  .btn-ask { background: #a78bfa; }
+  .btn-ask:hover { background: #c4b5fd; }
+  .ai-response { margin: 1rem 2rem; padding: 1.25rem; background: #1e293b; border: 1px solid #a78bfa44; border-radius: 8px; white-space: pre-wrap; line-height: 1.6; font-size: 0.9rem; }
+  .ai-response strong { color: #a78bfa; }
+  .view-toggle { display: flex; gap: 0.5rem; padding: 0.75rem 2rem; align-items: center; }
+  .view-toggle span { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .view-toggle button { padding: 0.35rem 1rem; font-size: 0.8rem; border-radius: 4px; }
+  .view-toggle button.active { background: #a78bfa; color: #0f172a; }
+  .view-toggle button:not(.active) { background: transparent; color: #94a3b8; border: 1px solid #334155; }
+  #status { padding: 0.5rem 2rem; color: #94a3b8; font-size: 0.85rem; min-height: 1.5rem; }
+  .events { padding: 1rem 2rem 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 1.25rem; transition: border-color 0.2s; }
+  .card:hover { border-color: #38bdf8; }
+  .card h3 { color: #f1f5f9; font-size: 1.05rem; margin-bottom: 0.5rem; }
+  .card .meta { font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
+  .card .meta span { display: block; }
+  .card a { color: #38bdf8; text-decoration: none; font-size: 0.85rem; display: inline-block; margin-top: 0.5rem; }
+  .card a:hover { text-decoration: underline; }
+  .empty { padding: 2rem; text-align: center; color: #64748b; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>dev.events</h1>
+  <p>Tech conference explorer — powered by MCP</p>
+</header>
+
+<div class="ask-bar">
+  <textarea id="prompt" placeholder="Ask AI: e.g. &quot;Find Python conferences in Europe this summer&quot;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI()}"></textarea>
+  <button class="btn-ask" id="askBtn" onclick="askAI()">Ask AI</button>
+</div>
+
+<div class="controls">
+  <div class="field">
+    <label>Topic</label>
+    <select id="topic">
+      <option value="">All</option>
+      <option value="ai">AI</option>
+      <option value="llm">LLM</option>
+      <option value="machine-learning">ML</option>
+      <option value="data-science">Data Science</option>
+      <option value="data">Data</option>
+      <option value="devops">DevOps</option>
+      <option value="kubernetes">Kubernetes</option>
+      <option value="cloud">Cloud</option>
+      <option value="aws">AWS</option>
+      <option value="azure">Azure</option>
+      <option value="google-cloud">Google Cloud</option>
+      <option value="security">Security</option>
+      <option value="python">Python</option>
+      <option value="java">Java</option>
+      <option value="javascript">JavaScript</option>
+      <option value="typescript">TypeScript</option>
+      <option value="golang">Go</option>
+      <option value="rust">Rust</option>
+      <option value="react">React</option>
+      <option value="node-js">Node.js</option>
+      <option value="dotnet">.NET</option>
+      <option value="mobile">Mobile</option>
+      <option value="ios">iOS</option>
+      <option value="android">Android</option>
+      <option value="web">Web</option>
+      <option value="sre">SRE</option>
+      <option value="qa">QA</option>
+      <option value="agile">Agile</option>
+      <option value="product">Product</option>
+      <option value="ux">UX</option>
+      <option value="oss">OSS</option>
+      <option value="linux">Linux</option>
+      <option value="game-dev">Game Dev</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Region</label>
+    <select id="region">
+      <option value="">All</option>
+      <option value="EU">Europe</option>
+      <option value="NA">North America</option>
+      <option value="AS">Asia</option>
+      <option value="AF">Africa</option>
+      <option value="SA">South America</option>
+      <option value="OC">Oceania</option>
+      <option value="ON">Online</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Country</label>
+    <input type="text" id="country" placeholder="e.g. DE, US" maxlength="2">
+  </div>
+  <div class="field">
+    <label>City</label>
+    <input type="text" id="city" placeholder="e.g. Berlin">
+  </div>
+  <div class="field">
+    <label>From</label>
+    <input type="date" id="startDate">
+  </div>
+  <div class="field">
+    <label>To</label>
+    <input type="date" id="endDate">
+  </div>
+  <div class="field">
+    <label>Limit</label>
+    <input type="number" id="limit" value="20" min="1" max="100">
+  </div>
+  <button id="searchBtn" onclick="fetchEvents()">Search</button>
+  <button class="btn-reset" onclick="resetFilters()">Reset</button>
+</div>
+
+<div id="status"></div>
+<div id="viewToggle" class="view-toggle" style="display:none">
+  <span>View:</span>
+  <button class="active" onclick="setView('tiles')">Tiles</button>
+  <button onclick="setView('text')">Text</button>
+</div>
+<div id="content"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let lastAIText = null;
+let lastAIToolData = null;
+let currentView = 'tiles';
+
+function setStatus(msg) { $('status').textContent = msg; }
+
+function setView(mode) {
+  currentView = mode;
+  const btns = $('viewToggle').querySelectorAll('button');
+  btns.forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === mode));
+  if (lastAIText) renderAI();
+}
+
+function showToggle(show) {
+  $('viewToggle').style.display = show ? 'flex' : 'none';
+}
+
+function renderAI() {
+  const container = $('content');
+  if (currentView === 'tiles' && lastAIToolData) {
+    const events = parseMCPEvents(lastAIToolData);
+    if (events.length) {
+      container.className = 'events';
+      container.innerHTML = events.map(ev => `
+        <div class="card">
+          <h3>${esc(ev.name)}</h3>
+          <div class="meta">
+            <span>${esc(ev.date)}</span>
+            <span>${esc(ev.location)}</span>
+          </div>
+          ${ev.url ? `<a href="${esc(ev.url)}" target="_blank">View on dev.events</a>` : ''}
+        </div>
+      `).join('');
+      return;
+    }
+  }
+  container.className = '';
+  container.innerHTML = '<div class="ai-response">' + esc(lastAIText) + '</div>';
+}
+
+async function askAI() {
+  const prompt = $('prompt').value.trim();
+  if (!prompt) return;
+  const btn = $('askBtn');
+  btn.disabled = true;
+  setStatus('Thinking...');
+  $('content').innerHTML = '';
+  $('content').className = '';
+  lastAIText = null;
+  lastAIToolData = null;
+  showToggle(false);
+  try {
+    const resp = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+    if (!resp.ok) throw new Error('Server error ' + resp.status);
+    const data = await resp.json();
+    if (data.error) { setStatus('Error: ' + data.error); return; }
+    lastAIText = data.result;
+    lastAIToolData = data.tool_data || null;
+    showToggle(!!lastAIToolData);
+    renderAI();
+    setStatus('');
+  } catch (e) {
+    setStatus('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function resetFilters() {
+  $('topic').value = '';
+  $('region').value = '';
+  $('country').value = '';
+  $('city').value = '';
+  $('startDate').value = '';
+  $('endDate').value = '';
+  $('limit').value = '20';
+  fetchEvents();
+}
+
+async function fetchEvents() {
+  const btn = $('searchBtn');
+  btn.disabled = true;
+  setStatus('Loading events...');
+  $('content').innerHTML = '';
+  $('content').className = '';
+  lastAIText = null;
+  lastAIToolData = null;
+  showToggle(false);
+  try {
+    const params = new URLSearchParams();
+    const fields = {
+      topic: $('topic').value,
+      region: $('region').value,
+      country: $('country').value.toUpperCase(),
+      city: $('city').value,
+      start_date: $('startDate').value,
+      end_date: $('endDate').value,
+      limit: $('limit').value,
+    };
+    for (const [k, v] of Object.entries(fields)) {
+      if (v) params.set(k, v);
+    }
+    const resp = await fetch('/api/events?' + params);
+    if (!resp.ok) throw new Error('Server error ' + resp.status);
+    const data = await resp.json();
+    renderTiles(data.result);
+    setStatus('');
+  } catch (e) {
+    setStatus('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderTiles(text) {
+  const container = $('content');
+  const events = parseMCPEvents(text);
+  if (!events.length) {
+    container.innerHTML = '<div class="empty">No events found.</div>';
+    return;
+  }
+  container.className = 'events';
+  container.innerHTML = events.map(ev => `
+    <div class="card">
+      <h3>${esc(ev.name)}</h3>
+      <div class="meta">
+        <span>${esc(ev.date)}</span>
+        <span>${esc(ev.location)}</span>
+      </div>
+      ${ev.url ? `<a href="${esc(ev.url)}" target="_blank">View on dev.events</a>` : ''}
+    </div>
+  `).join('');
+}
+
+function parseMCPEvents(text) {
+  const events = [];
+  const blocks = text.split(/^- \*\*/m).filter(b => b.trim());
+  for (const block of blocks) {
+    const nameMatch = block.match(/^(.+?)\*\*/);
+    const dateMatch = block.match(/Date:\s*(.+)/);
+    const locMatch = block.match(/Location:\s*(.+)/);
+    const urlMatch = block.match(/URL:\s*(.+)/);
+    if (nameMatch && dateMatch) {
+      events.push({
+        name: nameMatch[1].trim(),
+        date: dateMatch[1].trim(),
+        location: locMatch ? locMatch[1].trim() : '',
+        url: urlMatch ? urlMatch[1].trim() : '',
+      });
+    }
+  }
+  return events;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+fetchEvents();
+</script>
+
+</body>
+</html>
